@@ -93,6 +93,8 @@ x2  = [zero_padding; x2; zero_padding];
 x3  = [zero_padding; x3; zero_padding];
 x4  = [zero_padding; x4; zero_padding];
 
+opt_trajectory = [u x1 x2 x3 x4];
+
 %% Plotting
 t = 0:delta_t:delta_t*(length(u)-1);
 
