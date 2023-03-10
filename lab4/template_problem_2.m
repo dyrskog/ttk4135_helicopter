@@ -36,7 +36,7 @@ x6_0 = 0;                               % e_dot
 x0 = [x1_0 x2_0 x3_0 x4_0 x5_0 x6_0]';           % Initial values
 
 % Time horizon and initialization
-N  = 25;                                  % Time horizon for states
+N  = 100;                                  % Time horizon for states
 M  = N;                                 % Time horizon for inputs
 z  = zeros(N*mx+M*mu,1);                % Initialize z for the whole horizon
 z0 = z;                                 % Initial value for optimization
@@ -65,7 +65,7 @@ Q1(5,5) = 0;
 Q1(6,6) = 0;
 P1 = 1;                                % Weight on input
 P2 = 1;
-P = diag([P1 P2])
+P = diag([P1 P2]);
 Q = gen_q(Q1,P,N,M);                                  % Generate Q, hint: gen_q
 
 %% Generate system matrixes for linear model
@@ -80,7 +80,9 @@ beq = [A1*x0; zeros(height(Aeq)-height(x0), 1)];             % Generate b
 
 phi = @(z) z'*Q*z;
 
-z = fmincon(phi, z0, [], [], Aeq, beq, vlb, vub, @nonlcon);
+opts = optimoptions('fmincon', 'Algorithm', 'sqp', 'MaxFunctionEvaluations', 3e4, 'Display', 'iter');
+
+z = fmincon(phi, z0, [], [], Aeq, beq, vlb, vub, @nonlcon, opts);
 
 % % Calculate objective value
 % phi1 = 0.0;
