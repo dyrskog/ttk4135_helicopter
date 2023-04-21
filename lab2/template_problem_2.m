@@ -55,8 +55,8 @@ Q1(2,2) = 0;                            % Weight on state x2
 Q1(3,3) = 0;                            % Weight on state x3
 Q1(4,4) = 0;                            % Weight on state x4
 P1 = 12;                                % Weight on input
-Q = gen_q(Q1,P1,N,M);                                  % Generate Q, hint: gen_q
-c = [];                                  % Generate c, this is the linear constant term in the QP
+Q = gen_q(Q1,P1,N,M);                   % Generate Q, hint: gen_q
+c = [];                                 % Generate c, this is the linear constant term in the QP
 
 %% Generate system matrixes for linear model
 Aeq = gen_aeq(A1,B1,N,mx,mu);             % Generate A, hint: gen_aeq
