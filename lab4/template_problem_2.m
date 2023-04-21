@@ -36,10 +36,12 @@ x6_0 = 0;                               % e_dot
 x0 = [x1_0 x2_0 x3_0 x4_0 x5_0 x6_0]';           % Initial values
 
 % Time horizon and initialization
-N  = 100;                                  % Time horizon for states
+N  = 15;                                  % Time horizon for states
 M  = N;                                 % Time horizon for inputs
 z  = zeros(N*mx+M*mu,1);                % Initialize z for the whole horizon
 z0 = z;                                 % Initial value for optimization
+
+z0(1) = pi;
 
 % Bounds
 ul 	    = [-pi/6; -inf];                   % Lower bound on control
@@ -78,9 +80,9 @@ beq = [A1*x0; zeros(height(Aeq)-height(x0), 1)];             % Generate b
 % [z,lambda] = quadprog(Q,c,[],[],Aeq, beq, vlb, vub); % hint: quadprog. Type 'doc quadprog' for more info 
 % t1=toc;
 
-phi = @(z) z'*Q*z;
+phi = @(z) 0.5*z'*Q*z;
 
-opts = optimoptions('fmincon', 'Algorithm', 'sqp', 'MaxFunctionEvaluations', 3e4, 'Display', 'iter');
+opts = optimoptions('fmincon', 'Algorithm', 'sqp', 'MaxFunctionEvaluations', 5e4, 'Display', 'iter');
 
 z = fmincon(phi, z0, [], [], Aeq, beq, vlb, vub, @nonlcon, opts);
 
@@ -161,17 +163,25 @@ subplot(4,2,8),plot(t,x6','-mo'),grid,xlabel('tid (s)'),ylabel('elev rate')
 opt_u.time = t';
 opt_u.signals.values = opt_trajectory; 
 
-
 function [ c, ceq ] = nonlcon(z)
-  global N
+  global N mx
   alpha = 0.2;
   beta = 20;
   lambda_t = 2*pi/3;
   c = zeros(N,1);
   for k = 1:N
-      lambda_k = z(1);
-      e_k = z(5);
+      lambda_k = z(1+(k-1)*6);
+      e_k = z(5 + (k-1)*6);
       c(k) = alpha*exp(-beta*(lambda_k - lambda_t)'*(lambda_k - lambda_t)) - e_k;
   end
   ceq = [];
 end
+
+% function [ c, ceq ] = nonlcon(x)
+%   global N mx 
+%   alpha = 0.2;
+%   beta = 20;
+%   lambda_t = 2*pi/3;
+%   c = alpha*exp(-beta*(x(1:mx:mx*N) - lambda_t).^2) - x(5:mx:mx*N);
+%   ceq = [];
+% end
