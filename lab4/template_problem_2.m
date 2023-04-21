@@ -17,7 +17,7 @@ A = [ 0   1       0         0             0         0;
 B = [ 0 0 0 K_1*K_pp  0     0;
       0 0 0   0       0 K_3*K_ep]';
 
-% Discrete time system model. x = [lambda r p p_dot]'
+% Discrete time system model. x = [lambda r p p_dot e e_dot]'
 delta_t	= 0.25; % sampling time
 A1 = eye(length(A)) + A*delta_t;
 B1 = B*delta_t;
@@ -74,25 +74,11 @@ Q = gen_q(Q1,P,N,M);                                  % Generate Q, hint: gen_q
 Aeq = gen_aeq(A1,B1,N,mx,mu);             % Generate A, hint: gen_aeq
 beq = [A1*x0; zeros(height(Aeq)-height(x0), 1)];             % Generate b
 
-
-% %% Solve QP problem with linear model
-% tic
-% [z,lambda] = quadprog(Q,c,[],[],Aeq, beq, vlb, vub); % hint: quadprog. Type 'doc quadprog' for more info 
-% t1=toc;
-
-phi = @(z) 0.5*z'*Q*z;
+phi = @(z) z'*Q*z;
 
 opts = optimoptions('fmincon', 'Algorithm', 'sqp', 'MaxFunctionEvaluations', 5e4, 'Display', 'iter');
 
 z = fmincon(phi, z0, [], [], Aeq, beq, vlb, vub, @nonlcon, opts);
-
-% % Calculate objective value
-% phi1 = 0.0;
-% PhiOut = zeros(N*mx+M*mu,1);
-% for i=1:N*mx+M*mu
-%   phi1=phi1+Q(i,i)*z(i)*z(i);
-%   PhiOut(i) = phi1;
-% end
 
 %% Extract control inputs and states
 %u  = [z(N*mx+1:N*mx+M*mu);z(N*mx+M*mu)]; % Control input from solution
@@ -123,32 +109,6 @@ opt_trajectory = [u1 u2 x1 x2 x3 x4 x5 x6];
 %% Plotting
 t = 0:delta_t:delta_t*(length(u1)-1);
 
-% figure(2)
-% subplot(511)
-% stairs(t,u1),grid
-% ylabel('u')
-% subplot(512)
-% stairs(t,u2),grid
-% ylabel('u2')
-% subplot(513)
-% plot(t,x1,'m',t,x1,'mo'),grid
-% ylabel('lambda')
-% subplot(514)
-% plot(t,x2,'m',t,x2','mo'),grid
-% ylabel('r')
-% subplot(515)
-% plot(t,x3,'m',t,x3,'mo'),grid
-% ylabel('p')
-% subplot(516)
-% plot(t,x4,'m',t,x4','mo'),grid
-% xlabel('tid (s)'),ylabel('pdot')
-% subplot(517)
-% plot(t,x5,'m',t,x5','mo'),grid
-% xlabel('tid (s)'),ylabel('pdot')
-% subplot(518)
-% plot(t,x6,'m',t,x6','mo'),grid
-% xlabel('tid (s)'),ylabel('pdot')
-
 figure(3)
 subplot(4,2,1),stairs(t,u1),grid,ylabel('u - pitch')
 subplot(4,2,2),stairs(t,u2),grid,ylabel('u - elev')
@@ -164,24 +124,16 @@ opt_u.time = t';
 opt_u.signals.values = opt_trajectory; 
 
 function [ c, ceq ] = nonlcon(z)
-  global N mx
+  global N
+  mx = 6;
   alpha = 0.2;
   beta = 20;
   lambda_t = 2*pi/3;
   c = zeros(N,1);
-  for k = 1:N
-      lambda_k = z(1+(k-1)*6);
-      e_k = z(5 + (k-1)*6);
+  for k = 1:mx:N*mx
+      lambda_k = z(k);
+      e_k = z(k+4);
       c(k) = alpha*exp(-beta*(lambda_k - lambda_t)'*(lambda_k - lambda_t)) - e_k;
   end
   ceq = [];
 end
-
-% function [ c, ceq ] = nonlcon(x)
-%   global N mx 
-%   alpha = 0.2;
-%   beta = 20;
-%   lambda_t = 2*pi/3;
-%   c = alpha*exp(-beta*(x(1:mx:mx*N) - lambda_t).^2) - x(5:mx:mx*N);
-%   ceq = [];
-% end
